@@ -18,7 +18,14 @@
         <div id="setup-panel" class="quiz-setup">
             <h2><i class="fas fa-robot"></i> AI Quiz Generator</h2>
             <p>Enter your topic and let AI build a test for you.</p>
-            
+
+            <label style="color: #ef4444; font-weight: bold;">Select AI Model (Try changing this if it fails)</label>
+            <select id="ai-model-selector" style="border: 2px solid #ef4444;">
+                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Experimental (Best)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
+                <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B (Fastest)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Smartest)</option>
+            </select>
             <label>Subject</label>
             <select id="q-subject">
                 <option value="Mathematics">Mathematics</option>
@@ -50,6 +57,7 @@
         <div id="loading-spinner" style="display:none; text-align:center;">
             <i class="fas fa-circle-notch fa-spin fa-3x" style="color: #8b5cf6;"></i>
             <h3>Creating unique questions...</h3>
+            <p id="loading-text">Connecting to AI...</p>
         </div>
 
         <div id="quiz-panel"></div>
@@ -78,11 +86,8 @@
             measurementId: "G-1Y3EKYR648"
         };
 
-        const aiConfig = {
-            // PASTE YOUR NEW KEY HERE IF THIS ONE IS BLOCKED
-            apiKey: "AIzaSyDNE1AzM8_EXD-deTh-YUFTsgERM-bVPi8", 
-            model: "gemini-2.0-flash-exp" 
-        };
+        // --- PASTE YOUR API KEY HERE ---
+        const API_KEY = "AIzaSyDNE1AzM8_EXD-deTh-YUFTsgERM-bVPi8"; 
 
         // --- 2. INITIALIZE FIREBASE ---
         if (!firebase.apps.length) {
@@ -91,17 +96,9 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Check Login Status
         let currentUser = null;
         auth.onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                console.log("User logged in:", user.email);
-            } else {
-                console.log("User not logged in");
-                // Optional: Redirect to login if you want to force it
-                // window.location.href = 'index.html'; 
-            }
+            if (user) currentUser = user;
         });
 
         // --- 3. QUIZ LOGIC ---
@@ -114,11 +111,15 @@
             const topic = document.getElementById('q-topic').value;
             const count = document.getElementById('q-count').value;
             const difficulty = document.getElementById('q-diff').value;
+            
+            // GET THE SELECTED MODEL FROM DROPDOWN
+            const selectedModel = document.getElementById('ai-model-selector').value;
 
             if(!topic) { alert("Please enter a topic!"); return; }
 
             document.getElementById('setup-panel').style.display = 'none';
             document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('loading-text').innerText = `Attempting to connect to ${selectedModel}...`;
 
             const prompt = `
                 Act as a teacher. Generate ${count} MCQs for Subject: "${subject}", Topic: "${topic}". 
@@ -128,7 +129,8 @@
             `;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model}:generateContent?key=${aiConfig.apiKey}`, {
+                // Request using the selected model
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${API_KEY}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -136,24 +138,27 @@
 
                 const data = await response.json();
                 
-                if (data.error) throw new Error(data.error.message);
-                if (!data.candidates) throw new Error("AI sent empty response.");
-
-                let aiText = data.candidates[0].content.parts[0].text;
+                // Handle Errors
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
                 
-                // Clean JSON
+                let aiText = data.candidates[0].content.parts[0].text;
                 const jsonStartIndex = aiText.indexOf('[');
                 const jsonEndIndex = aiText.lastIndexOf(']') + 1;
                 
-                if (jsonStartIndex === -1) throw new Error("Invalid JSON format.");
+                if (jsonStartIndex === -1) throw new Error("Invalid format received. Try a different model.");
 
                 currentQuestions = JSON.parse(aiText.substring(jsonStartIndex, jsonEndIndex));
                 renderQuiz();
 
             } catch (error) {
                 console.error(error);
-                alert("Error: " + error.message);
-                location.reload();
+                alert(`Error with ${selectedModel}: ${error.message}\n\nTRY SELECTING A DIFFERENT MODEL IN THE DROPDOWN.`);
+                
+                // Reset UI so they can try again
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('setup-panel').style.display = 'block';
             }
         }
 
@@ -174,7 +179,6 @@
                 container.appendChild(card);
             });
 
-            // Submit Button
             const submitBtn = document.createElement('button');
             submitBtn.innerText = "Submit Quiz";
             submitBtn.style.marginTop = "20px";
@@ -190,12 +194,10 @@
             btnElement.classList.add('selected');
         }
 
-        // --- 4. SUBMIT & SAVE LOGIC ---
         async function calculateResults() {
             quizScore = 0;
             const topic = document.getElementById('q-topic').value;
 
-            // 1. Grading Loop
             currentQuestions.forEach((q, index) => {
                 const userChoice = userAnswers[index];
                 const correctChoice = q.correctIndex;
@@ -207,50 +209,29 @@
                 if (userChoice === correctChoice) {
                     quizScore++;
                 } else {
-                    if (userChoice !== undefined) {
-                        buttons[userChoice].classList.add('wrong');
-                        
-                        // Save Mistake (Only if logged in)
-                        if(currentUser) {
-                            db.collection('students').doc(currentUser.uid).collection('mistakes').add({
-                                question: q.question, 
-                                answer: q.options[correctChoice], 
-                                explanation: q.explanation, 
-                                topic: topic, 
-                                date: new Date().toLocaleDateString(), 
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
+                    if (userChoice !== undefined) buttons[userChoice].classList.add('wrong');
+                    if(currentUser) {
+                        db.collection('students').doc(currentUser.uid).collection('mistakes').add({
+                            question: q.question, answer: q.options[correctChoice], explanation: q.explanation, topic: topic, date: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     }
                 }
             });
 
-            // 2. Save History (Only if logged in)
             if(currentUser) {
                 try {
                     await db.collection('students').doc(currentUser.uid).collection('history').add({
-                        topic: topic, 
-                        score: quizScore, 
-                        total: currentQuestions.length, 
-                        date: new Date().toLocaleDateString(), 
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        topic: topic, score: quizScore, total: currentQuestions.length, date: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    document.getElementById('feedback-msg').innerText = "Results saved successfully!";
-                } catch(e) { 
-                    console.error("Save Error:", e);
-                    document.getElementById('feedback-msg').innerText = "Error saving results.";
-                }
+                    document.getElementById('feedback-msg').innerText = "Results saved!";
+                } catch(e) { console.error(e); }
             } else {
                 document.getElementById('feedback-msg').innerText = "Not logged in. Results not saved.";
             }
 
-            // 3. Show Results Panel
             document.getElementById('quiz-panel').style.display = 'none';
             document.getElementById('result-panel').style.display = 'block';
             document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
-            
-            // Note: We do NOT automatically redirect here. 
-            // The user must see their score first, then click the "Back to Dashboard" button in the result-panel.
         }
     </script>
 </body>
