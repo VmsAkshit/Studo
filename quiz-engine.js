@@ -1,4 +1,4 @@
-// quiz-engine.js - CLEAN VERSION
+// quiz-engine.js
 
 let currentQuestions = [];
 let userAnswers = {};
@@ -12,10 +12,11 @@ async function generateQuiz() {
 
     if(!topic) { alert("Please enter a topic name!"); return; }
 
+    // 1. Setup UI
     document.getElementById('setup-panel').style.display = 'none';
     document.getElementById('loading-spinner').style.display = 'block';
 
-    // STRICT PROMPT
+    // 2. Create Prompt
     const prompt = `
         Act as a strict CBSE Class 10 teacher. Generate ${count} multiple-choice questions (MCQs) for the subject "${subject}" on the specific topic "${topic}". 
         Difficulty level: ${difficulty}.
@@ -33,9 +34,13 @@ async function generateQuiz() {
     `;
 
     try {
-        // *** THIS IS THE CRITICAL LINE THAT WAS BROKEN ***
-        // quiz-engine.js (Line 40)
+        // 3. Construct URL dynamically from config.js
+        // This line automatically uses whatever model you set in config.js
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model}:generateContent?key=${aiConfig.apiKey}`;
+        
+        console.log("Requesting URL:", url); // This prints to console for debugging
+
+        const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -43,15 +48,22 @@ async function generateQuiz() {
 
         const data = await response.json();
 
+        // 4. Error Handling
         if (data.error) {
             throw new Error(data.error.message);
         }
 
+        if (!data.candidates || data.candidates.length === 0) {
+            throw new Error("AI returned no results.");
+        }
+
+        // 5. Parse Response
         let aiText = data.candidates[0].content.parts[0].text;
         
-        // Clean JSON
+        // Find JSON array brackets to ignore extra text
         const jsonStartIndex = aiText.indexOf('[');
         const jsonEndIndex = aiText.lastIndexOf(']') + 1;
+        
         if (jsonStartIndex === -1) throw new Error("Invalid JSON from AI");
         
         currentQuestions = JSON.parse(aiText.substring(jsonStartIndex, jsonEndIndex));
@@ -60,10 +72,16 @@ async function generateQuiz() {
     } catch (error) {
         console.error("Quiz Error:", error);
         alert(`Error: ${error.message}`);
+        
+        // Reset UI so user can try again
         document.getElementById('loading-spinner').style.display = 'none';
         document.getElementById('setup-panel').style.display = 'block';
     }
 }
+
+// ---------------------------------------------------
+// Render and Logic Functions
+// ---------------------------------------------------
 
 function renderQuiz() {
     document.getElementById('loading-spinner').style.display = 'none';
