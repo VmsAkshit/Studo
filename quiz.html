@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartQuiz - Practice Mode</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -11,7 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div style="width: 100%; max-width: 800px; margin: 20px;">
+
+    <div style="width: 100%; max-width: 800px; margin: 20px auto;">
         
         <div id="setup-panel" class="quiz-setup">
             <h2><i class="fas fa-robot"></i> AI Quiz Generator</h2>
@@ -42,10 +44,11 @@
             </select>
 
             <button onclick="generateQuiz()" style="margin-top: 20px;">Generate Quiz</button>
+            <button onclick="window.location.href='dashboard.html'" style="margin-top: 10px; background: #555;">Back to Dashboard</button>
         </div>
 
         <div id="loading-spinner" style="display:none; text-align:center;">
-            <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+            <i class="fas fa-circle-notch fa-spin fa-3x" style="color: #8b5cf6;"></i>
             <h3>Creating unique questions...</h3>
         </div>
 
@@ -54,31 +57,59 @@
         <div id="result-panel" style="display:none; text-align:center;" class="quiz-setup">
             <h2>Quiz Completed!</h2>
             <h1 id="score-display" style="font-size: 3rem; color: #8b5cf6;">0/0</h1>
-            <p id="feedback-msg">Saving results to cloud...</p>
-            <button onclick="location.reload()">Take Another Quiz</button>
-            <button onclick="window.location.href='dashboard.html'" style="background:#333;">Go Home</button>
+            <p id="feedback-msg">Saving results...</p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button onclick="location.reload()">Take Another</button>
+                <button onclick="window.location.href='dashboard.html'" style="background: #10b981;">Back to Dashboard</button>
+            </div>
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-
     <script>
-        console.log("Embedded Quiz Engine Loaded");
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxUsVjZc3A8D1pNAxqcOd4gkdvkpn-kLs",
+            authDomain: "jaycmun-4f2cf.firebaseapp.com",
+            projectId: "jaycmun-4f2cf",
+            storageBucket: "jaycmun-4f2cf.firebasestorage.app",
+            messagingSenderId: "771042098346",
+            appId: "1:771042098346:web:cef5dddd892788f6f224d3",
+            measurementId: "G-1Y3EKYR648"
+        };
 
+        const aiConfig = {
+            // PASTE YOUR NEW KEY HERE IF THIS ONE IS BLOCKED
+            apiKey: "AIzaSyAuIlMcI-tzGO8gpUxyykVbWKMyG0Eob68", 
+            model: "gemini-2.0-flash" 
+        };
+
+        // --- 2. INITIALIZE FIREBASE ---
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Check Login Status
+        let currentUser = null;
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                console.log("User logged in:", user.email);
+            } else {
+                console.log("User not logged in");
+                // Optional: Redirect to login if you want to force it
+                // window.location.href = 'index.html'; 
+            }
+        });
+
+        // --- 3. QUIZ LOGIC ---
         let currentQuestions = [];
         let userAnswers = {};
         let quizScore = 0;
 
         async function generateQuiz() {
-            console.log("Button Clicked");
-            
-            // 1. Check Config
-            if (typeof aiConfig === 'undefined') {
-                alert("Error: config.js not loaded. Check console.");
-                return;
-            }
-
             const subject = document.getElementById('q-subject').value;
             const topic = document.getElementById('q-topic').value;
             const count = document.getElementById('q-count').value;
@@ -104,12 +135,18 @@
                 });
 
                 const data = await response.json();
+                
                 if (data.error) throw new Error(data.error.message);
+                if (!data.candidates) throw new Error("AI sent empty response.");
 
                 let aiText = data.candidates[0].content.parts[0].text;
+                
+                // Clean JSON
                 const jsonStartIndex = aiText.indexOf('[');
                 const jsonEndIndex = aiText.lastIndexOf(']') + 1;
                 
+                if (jsonStartIndex === -1) throw new Error("Invalid JSON format.");
+
                 currentQuestions = JSON.parse(aiText.substring(jsonStartIndex, jsonEndIndex));
                 renderQuiz();
 
@@ -137,6 +174,7 @@
                 container.appendChild(card);
             });
 
+            // Submit Button
             const submitBtn = document.createElement('button');
             submitBtn.innerText = "Submit Quiz";
             submitBtn.style.marginTop = "20px";
@@ -152,11 +190,12 @@
             btnElement.classList.add('selected');
         }
 
+        // --- 4. SUBMIT & SAVE LOGIC ---
         async function calculateResults() {
-            const user = (typeof firebase !== 'undefined') ? firebase.auth().currentUser : null;
             quizScore = 0;
             const topic = document.getElementById('q-topic').value;
 
+            // 1. Grading Loop
             currentQuestions.forEach((q, index) => {
                 const userChoice = userAnswers[index];
                 const correctChoice = q.correctIndex;
@@ -164,29 +203,54 @@
                 document.getElementById(`explain-${index}`).style.display = 'block';
 
                 if(buttons[correctChoice]) buttons[correctChoice].classList.add('correct');
-                if (userChoice === correctChoice) quizScore++;
-                else if (userChoice !== undefined) {
-                    buttons[userChoice].classList.add('wrong');
-                    if(user) {
-                        db.collection('students').doc(user.uid).collection('mistakes').add({
-                            question: q.question, answer: q.options[correctChoice], explanation: q.explanation, topic: topic, date: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+
+                if (userChoice === correctChoice) {
+                    quizScore++;
+                } else {
+                    if (userChoice !== undefined) {
+                        buttons[userChoice].classList.add('wrong');
+                        
+                        // Save Mistake (Only if logged in)
+                        if(currentUser) {
+                            db.collection('students').doc(currentUser.uid).collection('mistakes').add({
+                                question: q.question, 
+                                answer: q.options[correctChoice], 
+                                explanation: q.explanation, 
+                                topic: topic, 
+                                date: new Date().toLocaleDateString(), 
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
                     }
                 }
             });
 
-            if(user) {
+            // 2. Save History (Only if logged in)
+            if(currentUser) {
                 try {
-                    await db.collection('students').doc(user.uid).collection('history').add({
-                        topic: topic, score: quizScore, total: currentQuestions.length, date: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    await db.collection('students').doc(currentUser.uid).collection('history').add({
+                        topic: topic, 
+                        score: quizScore, 
+                        total: currentQuestions.length, 
+                        date: new Date().toLocaleDateString(), 
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                } catch(e) { console.error(e); }
+                    document.getElementById('feedback-msg').innerText = "Results saved successfully!";
+                } catch(e) { 
+                    console.error("Save Error:", e);
+                    document.getElementById('feedback-msg').innerText = "Error saving results.";
+                }
+            } else {
+                document.getElementById('feedback-msg').innerText = "Not logged in. Results not saved.";
             }
 
+            // 3. Show Results Panel
             document.getElementById('quiz-panel').style.display = 'none';
             document.getElementById('result-panel').style.display = 'block';
             document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
-            document.getElementById('feedback-msg').innerText = user ? "Saved to Cloud!" : "Login to save results.";
+            
+            // Note: We do NOT automatically redirect here. 
+            // The user must see their score first, then click the "Back to Dashboard" button in the result-panel.
         }
     </script>
 </body>
