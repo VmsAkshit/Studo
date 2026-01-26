@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Progress</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-body">
+
+    <nav class="nav-bar">
+        <h2><i class="fas fa-chart-line"></i> Learning Analytics</h2>
+        <button onclick="window.location.href='dashboard.html'" style="width: auto;">Back to Home</button>
+    </nav>
+
+    <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 30px;">
+        <div class="feature-card" style="cursor: default; padding: 20px;">
+            <h3 style="color: var(--text-muted); font-size: 1rem;">Total Quizzes</h3>
+            <h1 id="total-quizzes" style="font-size: 3rem; color: var(--primary); margin: 10px 0;">0</h1>
+        </div>
+        <div class="feature-card" style="cursor: default; padding: 20px;">
+            <h3 style="color: var(--text-muted); font-size: 1rem;">Average Score</h3>
+            <h1 id="avg-score" style="font-size: 3rem; color: var(--success); margin: 10px 0;">0%</h1>
+        </div>
+        <div class="feature-card" style="cursor: default; padding: 20px;">
+            <h3 style="color: var(--text-muted); font-size: 1rem;">Questions Answered</h3>
+            <h1 id="total-questions" style="font-size: 3rem; color: #f59e0b; margin: 10px 0;">0</h1>
+        </div>
+    </div>
+
+    <div class="feature-card" style="cursor: default; margin-bottom: 30px;">
+        <h3>Performance History</h3>
+        <canvas id="progressChart" style="max-height: 400px;"></canvas>
+    </div>
+
+    <h3 style="color: var(--text-muted); margin-bottom: 15px;">Recent Activity</h3>
+    <div id="history-list">
+        </div>
+
+    <script>
+        // 1. Get Data from LocalStorage
+        const history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+        
+        // REVERSE history so newest is first for the list, but keep normal for chart
+        const recentHistory = [...history].reverse();
+
+        // 2. Update Summary Stats
+        document.getElementById('total-quizzes').innerText = history.length;
+
+        let totalScorePercent = 0;
+        let totalQuestionsAnswered = 0;
+
+        history.forEach(session => {
+            totalQuestionsAnswered += session.total;
+            totalScorePercent += (session.score / session.total) * 100;
+        });
+
+        const avg = history.length ? Math.round(totalScorePercent / history.length) : 0;
+        document.getElementById('avg-score').innerText = avg + "%";
+        document.getElementById('total-questions').innerText = totalQuestionsAnswered;
+
+        // 3. Populate History List
+        const listContainer = document.getElementById('history-list');
+        if (history.length === 0) {
+            listContainer.innerHTML = "<p style='text-align:center;'>No quizzes taken yet. Go take your first test!</p>";
+        } else {
+            recentHistory.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'feature-card';
+                itemDiv.style.marginBottom = '15px';
+                itemDiv.style.display = 'flex';
+                itemDiv.style.justifyContent = 'space-between';
+                itemDiv.style.alignItems = 'center';
+                itemDiv.style.padding = '20px';
+                
+                // Calculate percentage color
+                const p = (item.score / item.total) * 100;
+                let color = p >= 80 ? 'var(--success)' : (p >= 50 ? '#f59e0b' : 'var(--error)');
+
+                itemDiv.innerHTML = `
+                    <div style="text-align:left;">
+                        <h4 style="margin:0; color:var(--text-main);">${item.topic}</h4>
+                        <small style="color:var(--text-muted);">${item.date}</small>
+                    </div>
+                    <div>
+                        <span style="font-weight:bold; font-size:1.2rem; color:${color};">${item.score}/${item.total}</span>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        // 4. Render Chart (If data exists)
+        if (history.length > 0) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            // Prepare Data for Chart
+            const labels = history.map((h, i) => `Quiz ${i+1}`); // X-Axis
+            const dataPoints = history.map(h => (h.score / h.total) * 100); // Y-Axis (Percentages)
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Score Percentage (%)',
+                        data: dataPoints,
+                        borderColor: '#8b5cf6', // Neon Purple
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.4, // Smooth curves
+                        pointBackgroundColor: '#fff',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#a0a0a0' } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#333' },
+                            ticks: { color: '#a0a0a0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0a0' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
