@@ -1,24 +1,36 @@
-// quiz-engine.js - FINAL STABLE VERSION
+// quiz-engine.js - CLEAN VERSION
 
+console.log("Quiz Engine Script Loaded Successfully");
+
+// Global Variables
 let currentQuestions = [];
 let userAnswers = {};
 let quizScore = 0;
 
-// --- 1. GENERATE QUIZ ---
+// --- 1. GENERATE QUIZ FUNCTION ---
 async function generateQuiz() {
+    console.log("Generate button clicked!");
+
+    // Check if Config is loaded
+    if (typeof aiConfig === 'undefined') {
+        alert("Critical Error: config.js is not loaded. Check your HTML file.");
+        return;
+    }
+
     const subject = document.getElementById('q-subject').value;
     const topic = document.getElementById('q-topic').value;
     const count = document.getElementById('q-count').value;
     const difficulty = document.getElementById('q-diff').value;
 
-    if(!topic) { alert("Please enter a topic name!"); return; }
+    if(!topic) { alert("Please enter a topic!"); return; }
 
+    // UI Updates
     document.getElementById('setup-panel').style.display = 'none';
     document.getElementById('loading-spinner').style.display = 'block';
 
     const prompt = `
-        Act as a strict CBSE Class 10 teacher. Generate ${count} multiple-choice questions (MCQs) for the subject "${subject}" on the specific topic "${topic}". 
-        Difficulty level: ${difficulty}.
+        Act as a teacher. Generate ${count} MCQs for Subject: "${subject}", Topic: "${topic}". 
+        Difficulty: ${difficulty}.
         Return ONLY a raw JSON array.
         Structure: [{"question": "...", "options": ["A","B","C","D"], "correctIndex": 0, "explanation": "..."}]
     `;
@@ -31,23 +43,30 @@ async function generateQuiz() {
         });
 
         const data = await response.json();
+        
         if (data.error) throw new Error(data.error.message);
 
         let aiText = data.candidates[0].content.parts[0].text;
+        
+        // JSON Cleaning
         const jsonStartIndex = aiText.indexOf('[');
         const jsonEndIndex = aiText.lastIndexOf(']') + 1;
+        
+        if (jsonStartIndex === -1) throw new Error("AI did not return valid JSON.");
         
         currentQuestions = JSON.parse(aiText.substring(jsonStartIndex, jsonEndIndex));
         renderQuiz();
 
     } catch (error) {
-        console.error(error);
+        console.error("Quiz Generation Error:", error);
         alert("Error: " + error.message);
-        location.reload();
+        // Reset UI
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('setup-panel').style.display = 'block';
     }
 }
 
-// --- 2. RENDER QUIZ ---
+// --- 2. RENDER FUNCTION ---
 function renderQuiz() {
     document.getElementById('loading-spinner').style.display = 'none';
     const container = document.getElementById('quiz-panel');
@@ -57,18 +76,24 @@ function renderQuiz() {
     currentQuestions.forEach((q, index) => {
         const card = document.createElement('div');
         card.className = 'question-card';
+        
         let optionsHtml = '';
         q.options.forEach((opt, i) => {
             optionsHtml += `<button class="option-btn" onclick="selectAnswer(${index}, ${i}, this)">${opt}</button>`;
         });
-        card.innerHTML = `<h3>Q${index + 1}: ${q.question}</h3><div id="opts-${index}">${optionsHtml}</div><div id="explain-${index}" class="explanation"><strong>Explanation:</strong> ${q.explanation}</div>`;
+
+        card.innerHTML = `
+            <h3>Q${index + 1}: ${q.question}</h3>
+            <div id="opts-${index}">${optionsHtml}</div>
+            <div id="explain-${index}" class="explanation"><strong>Explanation:</strong> ${q.explanation}</div>
+        `;
         container.appendChild(card);
     });
 
     const submitBtn = document.createElement('button');
     submitBtn.innerText = "Submit Quiz";
     submitBtn.style.marginTop = "20px";
-    submitBtn.onclick = calculateResults; // This triggers the save logic
+    submitBtn.onclick = calculateResults;
     container.appendChild(submitBtn);
 }
 
@@ -80,19 +105,14 @@ function selectAnswer(qIndex, optIndex, btnElement) {
     btnElement.classList.add('selected');
 }
 
-// --- 3. CALCULATE AND SAVE (FIXED) ---
+// --- 3. SUBMIT & SAVE FUNCTION ---
 async function calculateResults() {
-    // SECURITY CHECK: Ensure user is logged in
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert("You must be logged in to save results.");
-        return;
-    }
+    // Check Login Status
+    const user = (typeof firebase !== 'undefined') ? firebase.auth().currentUser : null;
 
     quizScore = 0;
     const topic = document.getElementById('q-topic').value;
 
-    // Loop through questions
     currentQuestions.forEach((q, index) => {
         const userChoice = userAnswers[index];
         const correctChoice = q.correctIndex;
@@ -107,36 +127,38 @@ async function calculateResults() {
         } else {
             if (userChoice !== undefined) buttons[userChoice].classList.add('wrong');
             
-            // SAVE MISTAKE TO FIRESTORE
-            db.collection('students').doc(user.uid).collection('mistakes').add({
-                question: q.question,
-                answer: q.options[correctChoice],
-                explanation: q.explanation,
-                topic: topic,
-                date: new Date().toLocaleDateString(),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            // Cloud Save: Mistake
+            if(user) {
+                db.collection('students').doc(user.uid).collection('mistakes').add({
+                    question: q.question,
+                    answer: q.options[correctChoice],
+                    explanation: q.explanation,
+                    topic: topic,
+                    date: new Date().toLocaleDateString(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
         }
     });
 
-    // SAVE HISTORY TO FIRESTORE
-    try {
-        await db.collection('students').doc(user.uid).collection('history').add({
-            topic: topic,
-            score: quizScore,
-            total: currentQuestions.length,
-            date: new Date().toLocaleDateString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        console.log("Data Saved Successfully");
-        document.getElementById('quiz-panel').style.display = 'none';
-        document.getElementById('result-panel').style.display = 'block';
-        document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
-        document.getElementById('feedback-msg').innerText = "Results saved to Cloud!";
-
-    } catch (error) {
-        console.error("Save Error:", error);
-        alert("Error saving result: " + error.message);
+    // Cloud Save: History
+    if(user) {
+        try {
+            await db.collection('students').doc(user.uid).collection('history').add({
+                topic: topic,
+                score: quizScore,
+                total: currentQuestions.length,
+                date: new Date().toLocaleDateString(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { console.error("Save Error", e); }
     }
+
+    document.getElementById('quiz-panel').style.display = 'none';
+    document.getElementById('result-panel').style.display = 'block';
+    document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
+    
+    document.getElementById('feedback-msg').innerText = user 
+        ? "Results saved to Cloud!" 
+        : "Good practice! (Login to save results)";
 }
