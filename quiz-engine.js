@@ -122,24 +122,66 @@ function selectAnswer(qIndex, optIndex, btnElement) {
     btnElement.classList.add('selected');
 }
 
+// Add this helper function at the bottom of quiz-engine.js
+function saveToMistakeNotebook(question, correctAnswer, explanation, topic) {
+    let notebook = JSON.parse(localStorage.getItem('mistakeNotebook')) || [];
+    
+    // Add new mistake
+    notebook.push({
+        question: question,
+        answer: correctAnswer,
+        explanation: explanation,
+        topic: topic,
+        date: new Date().toLocaleDateString()
+    });
+
+    localStorage.setItem('mistakeNotebook', JSON.stringify(notebook));
+}
+
+// REPLACE YOUR OLD calculateResults FUNCTION WITH THIS ONE
 function calculateResults() {
     quizScore = 0;
+    const topic = document.getElementById('q-topic').value;
+
     currentQuestions.forEach((q, index) => {
         const userChoice = userAnswers[index];
         const correctChoice = q.correctIndex;
-        const explanation = document.getElementById(`explain-${index}`);
+        const explanationDiv = document.getElementById(`explain-${index}`);
         const parent = document.getElementById(`opts-${index}`);
         const buttons = parent.getElementsByClassName('option-btn');
 
-        explanation.style.display = 'block';
+        explanationDiv.style.display = 'block';
+
         if(buttons[correctChoice]) buttons[correctChoice].classList.add('correct');
-        if (userChoice !== undefined && userChoice !== correctChoice) {
-            buttons[userChoice].classList.add('wrong');
+
+        if (userChoice === correctChoice) {
+            quizScore++;
+        } else {
+            // IF WRONG: Highlight wrong button AND Save to Notebook
+            if (userChoice !== undefined) buttons[userChoice].classList.add('wrong');
+            
+            // Save this specific mistake
+            saveToMistakeNotebook(
+                q.question, 
+                q.options[correctChoice], 
+                q.explanation,
+                topic
+            );
         }
-        if (userChoice === correctChoice) quizScore++;
     });
+
+    // Save Progress (Score)
+    let history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+    history.push({
+        date: new Date().toLocaleDateString(),
+        topic: topic,
+        score: quizScore,
+        total: currentQuestions.length
+    });
+    localStorage.setItem('quizHistory', JSON.stringify(history));
 
     document.getElementById('quiz-panel').style.display = 'none';
     document.getElementById('result-panel').style.display = 'block';
     document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
+    document.getElementById('feedback-msg').innerText = "Mistakes have been saved to your Notebook!";
 }
