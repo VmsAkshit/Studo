@@ -21,7 +21,7 @@
 
             <label style="color: #ef4444; font-weight: bold;">Select AI Model</label>
             <select id="ai-model-selector" style="border: 2px solid #ef4444; background: #fff0f0;">
-                <option value="gemini-2.0-flash-lite-preview-02-05" selected>Gemini 2.0 Flash Lite (Recommended)</option>
+                <option value="gemini-2.0-flash-lite-preview-02-05" selected>Gemini 2.0 Flash Lite (Best for Quota)</option>
                 <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Experimental</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             </select>
@@ -66,17 +66,20 @@
             <h2>Quiz Completed!</h2>
             <h1 id="score-display" style="font-size: 3rem; color: #8b5cf6;">0/0</h1>
             
-            <p id="save-status" style="font-weight: bold; color: #666;">Saving results...</p>
+            <p id="save-status" style="font-weight: bold; color: #666; padding: 10px; border: 1px dashed #ccc; margin: 10px 0;">
+                Waiting for results...
+            </p>
             
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                 <button onclick="location.reload()" style="background: #2563eb;">Take Another</button>
+                
                 <button onclick="window.location.href='dashboard.html'" style="background: #10b981;">Back to Dashboard</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. FIREBASE CONFIG ---
+        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAxUsVjZc3A8D1pNAxqcOd4gkdvkpn-kLs",
             authDomain: "jaycmun-4f2cf.firebaseapp.com",
@@ -90,25 +93,25 @@
         // --- PASTE YOUR API KEY HERE ---
         const API_KEY = "AIzaSyDNE1AzM8_EXD-deTh-YUFTsgERM-bVPi8"; 
 
-        // Initialize Firebase
+        // --- 2. INITIALIZE FIREBASE ---
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Track Login Status
+        // Track User State
         let currentUser = null;
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
-                console.log("User detected:", user.email);
+                console.log("Logged in as:", user.email);
             } else {
-                console.warn("User NOT logged in - Data will not save.");
+                console.warn("No user logged in. Data will NOT save.");
             }
         });
 
-        // --- 2. GENERATE QUIZ ---
+        // --- 3. QUIZ LOGIC ---
         let currentQuestions = [];
         let userAnswers = {};
         let quizScore = 0;
@@ -148,14 +151,14 @@
                 const jsonStartIndex = aiText.indexOf('[');
                 const jsonEndIndex = aiText.lastIndexOf(']') + 1;
                 
-                if (jsonStartIndex === -1) throw new Error("Invalid format received.");
+                if (jsonStartIndex === -1) throw new Error("Invalid JSON format from AI.");
 
                 currentQuestions = JSON.parse(aiText.substring(jsonStartIndex, jsonEndIndex));
                 renderQuiz();
 
             } catch (error) {
                 console.error(error);
-                alert(`Error: ${error.message}\nTry a different model.`);
+                alert(`Error: ${error.message}\nTry selecting a different model from the dropdown.`);
                 document.getElementById('loading-spinner').style.display = 'none';
                 document.getElementById('setup-panel').style.display = 'block';
             }
@@ -193,16 +196,13 @@
             btnElement.classList.add('selected');
         }
 
-        // --- 3. SAVE & DISPLAY RESULTS ---
+        // --- 4. SAFE SUBMIT FUNCTION ---
         async function calculateResults() {
-            // Check login explicitly
-            const user = firebase.auth().currentUser;
-            
             quizScore = 0;
             const topic = document.getElementById('q-topic').value;
             const saveStatus = document.getElementById('save-status');
 
-            // 1. Grade Quiz & Save Mistakes
+            // --- STEP 1: CALCULATE SCORE ---
             currentQuestions.forEach((q, index) => {
                 const userChoice = userAnswers[index];
                 const correctChoice = q.correctIndex;
@@ -215,48 +215,56 @@
                     quizScore++;
                 } else {
                     if (userChoice !== undefined) buttons[userChoice].classList.add('wrong');
-                    
-                    // SAVE MISTAKE IF LOGGED IN
-                    if(user) {
+                }
+            });
+
+            // --- STEP 2: SHOW RESULTS IMMEDIATELY (Before Saving) ---
+            // This guarantees the user sees the score and the button, even if saving crashes.
+            document.getElementById('quiz-panel').style.display = 'none';
+            document.getElementById('result-panel').style.display = 'block';
+            document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
+            saveStatus.innerText = "Attempting to save...";
+
+            // --- STEP 3: ATTEMPT TO SAVE ---
+            const user = firebase.auth().currentUser;
+
+            if (!user) {
+                saveStatus.innerText = "⚠️ You are not logged in. Result not saved.";
+                saveStatus.style.color = "orange";
+                return;
+            }
+
+            try {
+                // Save History
+                await db.collection('students').doc(user.uid).collection('history').add({
+                    topic: topic, 
+                    score: quizScore, 
+                    total: currentQuestions.length, 
+                    date: new Date().toLocaleDateString(), 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Save Mistakes (Loop)
+                currentQuestions.forEach((q, index) => {
+                    if (userAnswers[index] !== q.correctIndex) {
                         db.collection('students').doc(user.uid).collection('mistakes').add({
                             question: q.question, 
-                            answer: q.options[correctChoice], 
+                            answer: q.options[q.correctIndex], 
                             explanation: q.explanation, 
                             topic: topic, 
                             date: new Date().toLocaleDateString(), 
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).catch(err => console.error("Mistake save fail:", err));
+                        });
                     }
-                }
-            });
+                });
 
-            // 2. Switch Screens
-            document.getElementById('quiz-panel').style.display = 'none';
-            document.getElementById('result-panel').style.display = 'block';
-            document.getElementById('score-display').innerText = `${quizScore} / ${currentQuestions.length}`;
+                saveStatus.innerText = "✅ Saved Successfully to Dashboard!";
+                saveStatus.style.color = "green";
 
-            // 3. Save History
-            if(user) {
-                saveStatus.innerText = "Saving to Dashboard...";
-                saveStatus.style.color = "orange";
-                
-                try {
-                    await db.collection('students').doc(user.uid).collection('history').add({
-                        topic: topic, 
-                        score: quizScore, 
-                        total: currentQuestions.length, 
-                        date: new Date().toLocaleDateString(), 
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    saveStatus.innerText = "✅ Saved Successfully!";
-                    saveStatus.style.color = "green";
-                } catch(e) {
-                    console.error("History Save Error:", e);
-                    saveStatus.innerText = "❌ Error Saving (Check Console)";
-                    saveStatus.style.color = "red";
-                }
-            } else {
-                saveStatus.innerText = "⚠️ Not logged in. Results not saved.";
+            } catch (error) {
+                console.error("Save Error:", error);
+                saveStatus.innerText = "❌ Error saving data. Check console.";
+                saveStatus.style.color = "red";
             }
         }
     </script>
