@@ -12,9 +12,7 @@ const firebaseConfig = {
 };
 
 // 2. AI Configuration (Your Google Gemini Key)
-// NOTE: Since this is on GitHub Pages, this key is visible to the public.
-// Ensure you have set usage limits in Google Cloud Console.
 const aiConfig = {
     apiKey: "AIzaSyAsOsfTB2CEjZauV9sL1JAyUCDi9ELG8Ng", 
-    model: "gemini-1.5-flash"
+    model: "gemini-1.5-flash" 
 };
