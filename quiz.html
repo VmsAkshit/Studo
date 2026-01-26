@@ -23,14 +23,14 @@
             <label>Chapter / Topic Name</label>
             <input type="text" id="q-topic" placeholder="e.g. Trigonometry, Carbon Compounds, Nationalism in Europe">
 
-           <label>Number of Questions</label>
-           <select id="q-count">
-           <option value="5">5 Questions</option>
-           <option value="10">10 Questions</option>
-           <option value="20">20 Questions</option>
-           <option value="30">30 Questions</option>
-           <option value="50">50 Questions (Exam Mode)</option>
-           </select>
+            <label>Number of Questions</label>
+            <select id="q-count">
+                <option value="5">5 Questions</option>
+                <option value="10">10 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="50">50 Questions (Exam Mode)</option>
+            </select>
 
             <label>Difficulty</label>
             <select id="q-diff">
@@ -52,16 +52,21 @@
 
         <div id="result-panel" style="display:none; text-align:center;" class="quiz-setup">
             <h2>Quiz Completed!</h2>
-            <h1 id="score-display" style="font-size: 3rem; color: #6c5ce7;">0/0</h1>
+            <h1 id="score-display" style="font-size: 3rem; color: #8b5cf6;">0/0</h1>
             <p id="feedback-msg">Great job practicing!</p>
             <button onclick="location.reload()">Take Another Quiz</button>
-            <button onclick="window.location.href='dashboard.html'" style="background:#2d3436;">Go Home</button>
+            <button onclick="window.location.href='dashboard.html'" style="background:#333;">Go Home</button>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
     <script src="config.js"></script>
+    
+    <script src="auth.js"></script>
+
     <script src="quiz-engine.js"></script>
 </body>
 </html>
