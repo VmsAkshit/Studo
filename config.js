@@ -11,8 +11,8 @@ const firebaseConfig = {
     measurementId: "G-1Y3EKYR648"
 };
 
-// 2. AI Configuration (Your Google Gemini Key)
+// BACKUP OPTION: Use the specific version number
 const aiConfig = {
     apiKey: "AIzaSyBL-r7ZeMnnZw1PKcvI9Fwdsqe2kBoeyNY", 
-    model: "gemini-pro" 
+    model: "gemini-1.5-flash-001" 
 };
