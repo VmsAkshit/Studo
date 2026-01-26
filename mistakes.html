@@ -13,7 +13,11 @@
         <button onclick="window.location.href='dashboard.html'" style="width: auto;">Back to Home</button>
     </nav>
 
-    <div id="mistakes-container" class="grid-container" style="display: block;">
+    <div id="loading-msg" style="text-align:center; padding: 20px;">
+        <i class="fas fa-spinner fa-spin"></i> Loading your notebook...
+    </div>
+
+    <div id="mistakes-container" class="grid-container" style="display: none;">
         </div>
 
     <div id="empty-msg" style="text-align:center; display:none; margin-top:50px;">
@@ -21,22 +25,50 @@
         <p>Keep practicing. When you get a question wrong, it will appear here.</p>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
     <script>
-        // Load Mistakes
-        const notebook = JSON.parse(localStorage.getItem('mistakeNotebook')) || [];
-        const container = document.getElementById('mistakes-container');
+        // Wait for user to login
+        window.auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                loadMistakes(user.uid);
+            } else {
+                window.location.href = "index.html";
+            }
+        });
 
-        if (notebook.length === 0) {
-            document.getElementById('empty-msg').style.display = 'block';
-        } else {
-            // Loop through saved mistakes and display cards
-            notebook.reverse().forEach((item, index) => {
+        async function loadMistakes(uid) {
+            const container = document.getElementById('mistakes-container');
+            const emptyMsg = document.getElementById('empty-msg');
+            const loadingMsg = document.getElementById('loading-msg');
+
+            // Fetch from Firebase (Ordered by newest)
+            const snapshot = await window.db.collection('students').doc(uid)
+                                   .collection('mistakes')
+                                   .orderBy('timestamp', 'desc')
+                                   .get();
+
+            loadingMsg.style.display = 'none';
+
+            if (snapshot.empty) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'grid'; // Show grid
+
+            snapshot.forEach(doc => {
+                const item = doc.data();
                 const card = document.createElement('div');
                 card.className = 'feature-card';
                 card.style.textAlign = 'left';
                 card.style.marginBottom = '20px';
                 card.style.cursor = 'default';
-
+                
                 card.innerHTML = `
                     <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${item.topic}</span>
                     <h3 style="margin-top: 10px; color: var(--text-main);">${item.question}</h3>
@@ -44,18 +76,20 @@
                     <div style="background: #2d2d2d; padding: 15px; border-radius: 8px; margin-top: 10px; border-left: 4px solid var(--primary);">
                         <strong>Why?</strong> ${item.explanation}
                     </div>
-                    <button onclick="deleteMistake(${index})" style="background: #333; margin-top: 15px; width: auto; font-size: 0.8rem;">Remove</button>
+                    <button onclick="deleteMistake('${doc.id}')" style="background: #333; margin-top: 15px; width: auto; font-size: 0.8rem;">Remove</button>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function deleteMistake(index) {
-            // Remove item from array based on reversed index logic
-            const realIndex = notebook.length - 1 - index;
-            notebook.splice(realIndex, 1);
-            localStorage.setItem('mistakeNotebook', JSON.stringify(notebook));
-            location.reload();
+        async function deleteMistake(docId) {
+            const user = window.auth.currentUser;
+            if(user) {
+                if(confirm("Mark this as mastered?")) {
+                    await window.db.collection('students').doc(user.uid).collection('mistakes').doc(docId).delete();
+                    location.reload();
+                }
+            }
         }
     </script>
 </body>
