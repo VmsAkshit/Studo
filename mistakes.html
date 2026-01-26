@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mistake Notebook</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <nav class="nav-bar">
+        <h2><i class="fas fa-book-open"></i> Mistake Notebook</h2>
+        <button onclick="window.location.href='dashboard.html'" style="width: auto;">Back to Home</button>
+    </nav>
+
+    <div id="mistakes-container" class="grid-container" style="display: block;">
+        </div>
+
+    <div id="empty-msg" style="text-align:center; display:none; margin-top:50px;">
+        <h3>No mistakes yet! 🎉</h3>
+        <p>Keep practicing. When you get a question wrong, it will appear here.</p>
+    </div>
+
+    <script>
+        // Load Mistakes
+        const notebook = JSON.parse(localStorage.getItem('mistakeNotebook')) || [];
+        const container = document.getElementById('mistakes-container');
+
+        if (notebook.length === 0) {
+            document.getElementById('empty-msg').style.display = 'block';
+        } else {
+            // Loop through saved mistakes and display cards
+            notebook.reverse().forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'feature-card';
+                card.style.textAlign = 'left';
+                card.style.marginBottom = '20px';
+                card.style.cursor = 'default';
+
+                card.innerHTML = `
+                    <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${item.topic}</span>
+                    <h3 style="margin-top: 10px; color: var(--text-main);">${item.question}</h3>
+                    <p style="color: var(--success); font-weight: bold;">Correct Answer: ${item.answer}</p>
+                    <div style="background: #2d2d2d; padding: 15px; border-radius: 8px; margin-top: 10px; border-left: 4px solid var(--primary);">
+                        <strong>Why?</strong> ${item.explanation}
+                    </div>
+                    <button onclick="deleteMistake(${index})" style="background: #333; margin-top: 15px; width: auto; font-size: 0.8rem;">Remove</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function deleteMistake(index) {
+            // Remove item from array based on reversed index logic
+            const realIndex = notebook.length - 1 - index;
+            notebook.splice(realIndex, 1);
+            localStorage.setItem('mistakeNotebook', JSON.stringify(notebook));
+            location.reload();
+        }
+    </script>
+</body>
+</html>
