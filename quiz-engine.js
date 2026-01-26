@@ -34,10 +34,8 @@ async function generateQuiz() {
 
     try {
         // *** THIS IS THE CRITICAL LINE THAT WAS BROKEN ***
-        // We are forcing the correct URL here manually to prevent typos.
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiConfig.apiKey}`;
-        
-        const response = await fetch(url, {
+        // quiz-engine.js (Line 40)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${aiConfig.model}:generateContent?key=${aiConfig.apiKey}`;
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
