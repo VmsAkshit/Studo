@@ -13,6 +13,6 @@ const firebaseConfig = {
 
 // BACKUP OPTION: Use the specific version number
 const aiConfig = {
-    apiKey: "AIzaSyAuIlMcI-tzGO8gpUxyykVbWKMyG0Eob68", 
-    model: "gemini-2.5-flash" 
+    apiKey: "AIzaSyDNE1AzM8_EXD-deTh-YUFTsgERM-bVPi8", 
+    model: "gemini-2.0-flash-exp" 
 };
