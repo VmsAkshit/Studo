@@ -14,5 +14,5 @@ const firebaseConfig = {
 // 2. AI Configuration (Your Google Gemini Key)
 const aiConfig = {
     apiKey: "AIzaSyBL-r7ZeMnnZw1PKcvI9Fwdsqe2kBoeyNY", 
-    model: "gemini-1.5-flash" 
+    model: "gemini-pro" 
 };
