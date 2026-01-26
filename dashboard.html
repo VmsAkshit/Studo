@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <nav class="nav-bar">
+        <h2>Welcome, <span id="user-name">Student</span></h2>
+        <div>
+            <span style="margin-right: 15px; font-weight:bold; color:var(--primary);">
+                <i class="fas fa-fire"></i> 0 Streak
+            </span>
+            <button onclick="logout()" style="width: auto; padding: 8px 20px; background: var(--danger);">Logout</button>
+        </div>
+    </nav>
+
+    <h3 style="margin-bottom: 20px;">Your Learning Hub</h3>
+
+    <div class="grid-container">
+        <div class="feature-card" onclick="window.location.href='quiz.html'">
+            <i class="fas fa-robot fa-3x" style="color: #6c5ce7; margin-bottom:15px;"></i>
+            <h3>Generate AI Quiz</h3>
+            <p>Practice specific topics</p>
+        </div>
+
+        <div class="feature-card" onclick="alert('Feature coming soon!')">
+            <i class="fas fa-book-open fa-3x" style="color: #00b894; margin-bottom:15px;"></i>
+            <h3>Mistake Notebook</h3>
+            <p>Revise your weak points</p>
+        </div>
+
+        <div class="feature-card" onclick="alert('Feature coming soon!')">
+            <i class="fas fa-chart-line fa-3x" style="color: #e17055; margin-bottom:15px;"></i>
+            <h3>My Progress</h3>
+            <p>View score history</p>
+        </div>
+
+        <div class="feature-card" onclick="alert('Feature coming soon!')">
+            <i class="fas fa-lightbulb fa-3x" style="color: #fdcb6e; margin-bottom:15px;"></i>
+            <h3>AI Study Guide</h3>
+            <p>Personalized roadmap</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        checkAuth(); // Verify user is logged in
+    </script>
+</body>
+</html>
