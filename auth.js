@@ -1,9 +1,13 @@
 // auth.js
 
-// Initialize Firebase using the config from config.js
+// auth.js - UPDATE THE TOP PART
 const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+
+// EXPORT THESE GLOBALLY so other files can use them
+window.auth = firebase.auth();
+window.db = firebase.firestore();
+
+// ... (Keep the rest of your login/register/logout functions exactly the same) ...
 
 // 1. Toggle between Login and Register views
 function toggleAuth(view) {
