@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartQuiz - Student Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="auth-container">
+        <h1>SmartQuiz AI</h1>
+        <p>CBSE Class 9 & 10 Prep Platform</p>
+
+        <div id="login-form">
+            <input type="email" id="login-email" placeholder="Email Address">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button onclick="loginUser()">Login</button>
+            <p class="toggle-link" onclick="toggleAuth('register')">New Student? Create Account</p>
+        </div>
+
+        <div id="register-form" style="display:none;">
+            <input type="text" id="reg-name" placeholder="Full Name">
+            <select id="reg-class">
+                <option value="9">Class 9 (CBSE)</option>
+                <option value="10">Class 10 (CBSE)</option>
+            </select>
+            <input type="email" id="reg-email" placeholder="Email Address">
+            <input type="password" id="reg-pass" placeholder="Create Password">
+            <button onclick="registerUser()">Sign Up</button>
+            <p class="toggle-link" onclick="toggleAuth('login')">Already have an account? Login</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
