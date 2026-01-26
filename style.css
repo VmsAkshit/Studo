@@ -1,14 +1,14 @@
-/* style.css - NEW MODERN THEME */
+/* style.css - PROFESSIONAL DARK THEME */
 :root {
-    --primary: #2563eb;       /* Bright Blue */
-    --primary-hover: #1d4ed8;
-    --bg-color: #f3f4f6;      /* Light Grey-Blue Background */
-    --card-bg: #ffffff;       /* Pure White Cards */
-    --text-main: #1f2937;     /* Dark Grey Text (Not Black) */
-    --text-light: #6b7280;
-    --success: #10b981;       /* Green */
-    --error: #ef4444;         /* Red */
-    --accent: #8b5cf6;        /* Purple for specialized accents */
+    --bg-color: #121212;       /* Deep Black Background */
+    --card-bg: #1e1e1e;        /* Dark Grey Cards */
+    --primary: #8b5cf6;        /* Neon Purple */
+    --primary-hover: #7c3aed;
+    --text-main: #e0e0e0;      /* Light Grey Text */
+    --text-muted: #a0a0a0;     /* Dimmer Text */
+    --border: #333333;         /* Subtle Borders */
+    --success: #10b981;        /* Bright Green */
+    --error: #ef4444;          /* Bright Red */
 }
 
 body {
@@ -18,44 +18,43 @@ body {
     color: var(--text-main);
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Changed from center to allow scrolling */
+    align-items: flex-start;
     min-height: 100vh;
     padding-top: 40px;
 }
 
-/* Auth & General Containers */
+/* Auth & Containers */
 .auth-container {
     background: var(--card-bg);
     padding: 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border);
     width: 350px;
     text-align: center;
     margin-top: 50px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 h1, h2, h3 { color: var(--text-main); margin-top: 0; font-weight: 700; }
-p { color: var(--text-light); line-height: 1.6; }
+p { color: var(--text-muted); line-height: 1.6; }
 
-/* Inputs & Buttons */
+/* Inputs */
 input, select {
     width: 100%;
     padding: 14px;
     margin: 10px 0;
     border-radius: 8px;
-    border: 2px solid #e5e7eb;
-    box-sizing: border-box;
+    border: 1px solid var(--border);
+    background: #2d2d2d;
+    color: white;
     font-size: 1rem;
-    transition: border-color 0.2s;
-    background: #f9fafb;
 }
-
 input:focus, select:focus {
     outline: none;
     border-color: var(--primary);
-    background: white;
 }
 
+/* Buttons */
 button {
     width: 100%;
     padding: 14px;
@@ -65,25 +64,13 @@ button {
     background: var(--primary);
     color: white;
     font-weight: 600;
-    font-size: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+    transition: 0.2s;
 }
+button:hover { background: var(--primary-hover); transform: translateY(-2px); }
 
-button:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
-}
-
-/* Dashboard Styling */
-.dashboard-body {
-    display: block;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
+/* Dashboard */
+.dashboard-body { display: block; max-width: 1200px; margin: 0 auto; padding: 20px; }
 
 .nav-bar {
     display: flex;
@@ -92,7 +79,7 @@ button:hover {
     background: var(--card-bg);
     padding: 15px 30px;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid var(--border);
     margin-bottom: 30px;
 }
 
@@ -107,26 +94,24 @@ button:hover {
     padding: 30px;
     border-radius: 16px;
     text-align: center;
-    transition: all 0.3s ease;
     cursor: pointer;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    transition: 0.3s;
 }
-
 .feature-card:hover {
-    transform: translateY(-5px);
     border-color: var(--primary);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    background: #252525;
 }
 
-/* QUIZ SPECIFIC STYLES (The part you see during the test) */
+/* Quiz UI */
 .quiz-setup {
     max-width: 700px;
-    margin: 0 auto 50px auto;
+    margin: 0 auto;
     background: var(--card-bg);
     padding: 40px;
     border-radius: 20px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border);
 }
 
 .question-card {
@@ -134,74 +119,36 @@ button:hover {
     padding: 30px;
     margin-bottom: 25px;
     border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    /* No left border, cleaner look */
+    border: 1px solid var(--border);
 }
-
-.question-card h3 {
-    color: var(--primary);
-    font-size: 1.25rem;
-    margin-bottom: 20px;
-}
+.question-card h3 { color: var(--primary); }
 
 .option-btn {
-    display: block;
     width: 100%;
     padding: 16px;
     margin: 10px 0;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
+    background: #2d2d2d;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s;
     color: var(--text-main);
-    box-shadow: none; /* Remove button shadow for options */
-    font-weight: 500;
+    text-align: left;
 }
+.option-btn:hover { background: #3d3d3d; border-color: var(--primary); }
+.option-btn.selected { background: var(--primary); border-color: var(--primary); }
 
-.option-btn:hover {
-    background: #eff6ff;
-    border-color: var(--primary);
-    transform: none; /* Don't jump on hover */
-}
+/* Results */
+.correct { background: var(--success) !important; border-color: var(--success) !important; }
+.wrong { background: var(--error) !important; border-color: var(--error) !important; }
 
-.option-btn.selected {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Results coloring */
-.correct {
-    background: var(--success) !important;
-    color: white !important;
-    border-color: var(--success) !important;
-}
-
-.wrong {
-    background: var(--error) !important;
-    color: white !important;
-    border-color: var(--error) !important;
-}
-
-/* Loading Spinner */
-#loading-spinner {
-    display: none;
-    text-align: center;
-    padding: 60px;
-    color: var(--primary);
-}
-
-/* AI Explanation Box */
 .explanation {
-    background: #f0fdf4; /* Light Green Background */
-    color: #166534;      /* Dark Green Text */
+    background: #064e3b; /* Dark Green bg */
+    color: #a7f3d0;      /* Light Green text */
     padding: 20px;
     border-radius: 10px;
     margin-top: 20px;
     display: none;
-    border: 1px solid #bbf7d0;
-    line-height: 1.6;
+    border: 1px solid #059669;
 }
+
+/* Loading */
+#loading-spinner { display: none; text-align: center; padding: 60px; color: var(--primary); }
