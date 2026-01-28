@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQuiz - Register</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 450px; text-align: center;">
+        <div style="margin-bottom: 30px;">
+            <i class="fas fa-user-plus fa-3x" style="color: #ec4899; margin-bottom: 15px;"></i>
+            <h2>Create Account</h2>
+            <p style="color: #94a3b8;">Join specifically designed AI learning.</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); register();">
+            <div style="text-align: left;">
+                <label>Email Address</label>
+                <input type="email" id="reg-email" placeholder="student@example.com" required>
+                <label>Password</label>
+                <input type="password" id="reg-password" placeholder="Min 6 characters" required>
+            </div>
+
+            <button type="submit" class="primary-btn" style="background: linear-gradient(135deg, #ec4899, #f43f5e);">
+                <i class="fas fa-rocket"></i> Sign Up
+            </button>
+            <p id="reg-error" style="color: #ef4444; margin-top: 15px; font-size: 0.9rem;"></p>
+        </form>
+
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #94a3b8; font-size: 0.9rem;">
+                Already have an account? <a href="index.html" style="color: #6366f1; text-decoration: none; font-weight: 600;">Login here</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        function register() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const btn = document.querySelector('button');
+            const errorLabel = document.getElementById('reg-error');
+
+            btn.innerText = "Creating Account...";
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((cred) => db.collection('students').doc(cred.user.uid).set({ email: email, joined: new Date() }))
+                .then(() => window.location.href = "dashboard.html")
+                .catch((err) => {
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> Sign Up';
+                    errorLabel.innerText = err.message;
+                });
+        }
+    </script>
+</body>
+</html>
