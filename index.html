@@ -2,40 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SmartQuiz - Student Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQuiz - Login</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="config.js"></script>
 </head>
 <body>
-
-    <div class="auth-container">
-        <h1>SmartQuiz AI</h1>
-        <p>CBSE Class 9 & 10 Prep Platform</p>
-
-        <div id="login-form">
-            <input type="email" id="login-email" placeholder="Email Address">
-            <input type="password" id="login-pass" placeholder="Password">
-            <button onclick="loginUser()">Login</button>
-            <p class="toggle-link" onclick="toggleAuth('register')">New Student? Create Account</p>
+    <div class="container" style="max-width: 450px; text-align: center;">
+        <div style="margin-bottom: 30px;">
+            <i class="fas fa-brain fa-3x" style="color: #6366f1; margin-bottom: 15px;"></i>
+            <h2>Welcome Back</h2>
+            <p style="color: #94a3b8;">Sign in to continue your learning journey</p>
         </div>
 
-        <div id="register-form" style="display:none;">
-            <input type="text" id="reg-name" placeholder="Full Name">
-            <select id="reg-class">
-                <option value="9">Class 9 (CBSE)</option>
-                <option value="10">Class 10 (CBSE)</option>
-            </select>
-            <input type="email" id="reg-email" placeholder="Email Address">
-            <input type="password" id="reg-pass" placeholder="Create Password">
-            <button onclick="registerUser()">Sign Up</button>
-            <p class="toggle-link" onclick="toggleAuth('login')">Already have an account? Login</p>
+        <form onsubmit="event.preventDefault(); login();">
+            <div style="text-align: left;">
+                <label>Email Address</label>
+                <div style="position: relative;">
+                    <i class="fas fa-envelope" style="position: absolute; left: 15px; top: 15px; color: #94a3b8;"></i>
+                    <input type="email" id="email" placeholder="student@example.com" style="padding-left: 45px;" required>
+                </div>
+
+                <label>Password</label>
+                <div style="position: relative;">
+                    <i class="fas fa-lock" style="position: absolute; left: 15px; top: 15px; color: #94a3b8;"></i>
+                    <input type="password" id="password" placeholder="••••••••" style="padding-left: 45px;" required>
+                </div>
+            </div>
+
+            <button type="submit" class="primary-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+            <p id="error-msg" style="color: #ef4444; margin-top: 15px; font-size: 0.9rem; display: none;"></p>
+        </form>
+
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #94a3b8; font-size: 0.9rem;">
+                Don't have an account? <a href="register.html" style="color: #ec4899; text-decoration: none; font-weight: 600;">Sign Up</a>
+            </p>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
+    <script>
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged(user => { if (user) window.location.href = "dashboard.html"; });
+
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.querySelector('button');
+            const errorMsg = document.getElementById('error-msg');
+
+            btn.innerText = "Logging in...";
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(err => {
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                    errorMsg.style.display = 'block';
+                    errorMsg.innerText = err.message;
+                });
+        }
+    </script>
 </body>
 </html>
