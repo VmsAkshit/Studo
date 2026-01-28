@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studo - Notepad</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+
+    <div class="container" style="max-width: 800px;">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2><i class="fas fa-sticky-note"></i> My Notepad</h2>
+            <p style="color: #94a3b8;">Save your thoughts and formulas</p>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label>Add a new note</label>
+            <textarea id="note-input" rows="3" placeholder="e.g. Remember to practice Calculus Integration..." style="width: 100%; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; resize: vertical;"></textarea>
+            <button onclick="saveNote()" class="primary-btn" style="margin-top: 15px;">
+                <i class="fas fa-plus"></i> Save Note
+            </button>
+        </div>
+
+        <h3 style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">Your Notes</h3>
+        
+        <div id="loading" style="text-align: center; color: #94a3b8;">Loading...</div>
+        <div id="notes-list" style="display: grid; gap: 15px;"></div>
+
+        <button onclick="window.location.href='dashboard.html'" class="secondary-btn" style="margin-top: 30px;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+
+    </div>
+
+    <script>
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        auth.onAuthStateChanged(user => {
+            if (user) { loadNotes(user.uid); } 
+            else { window.location.href = "index.html"; }
+        });
+
+        async function saveNote() {
+            const input = document.getElementById('note-input');
+            const content = input.value.trim();
+            const user = auth.currentUser;
+
+            if(!content) return alert("Please write something!");
+            
+            try {
+                await db.collection('students').doc(user.uid).collection('personal_notes').add({
+                    content: content,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = ''; // Clear input
+                loadNotes(user.uid); // Refresh list
+            } catch(e) {
+                alert("Error saving note: " + e.message);
+            }
+        }
+
+        async function loadNotes(uid) {
+            const list = document.getElementById('notes-list');
+            const loading = document.getElementById('loading');
+            
+            const snapshot = await db.collection('students').doc(uid).collection('personal_notes')
+                .orderBy('timestamp', 'desc').get();
+            
+            loading.style.display = 'none';
+            list.innerHTML = '';
+
+            if (snapshot.empty) {
+                list.innerHTML = '<p style="text-align: center; color: #94a3b8;">No notes yet. Add one above!</p>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const noteDiv = document.createElement('div');
+                noteDiv.style.background = "rgba(255,255,255,0.05)";
+                noteDiv.style.padding = "15px";
+                noteDiv.style.borderRadius = "12px";
+                noteDiv.style.border = "1px solid rgba(255,255,255,0.1)";
+                noteDiv.style.position = "relative";
+                
+                noteDiv.innerHTML = `
+                    <p style="white-space: pre-wrap; margin-right: 30px;">${data.content}</p>
+                    <button onclick="deleteNote('${doc.id}')" style="position: absolute; top: 10px; right: 10px; width: auto; padding: 5px; background: none; color: #ef4444; margin: 0;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                list.appendChild(noteDiv);
+            });
+        }
+
+        async function deleteNote(id) {
+            if(confirm("Delete this note?")) {
+                const user = auth.currentUser;
+                await db.collection('students').doc(user.uid).collection('personal_notes').doc(id).delete();
+                loadNotes(user.uid);
+            }
+        }
+    </script>
+</body>
+</html>
