@@ -14,7 +14,7 @@
 <body>
     <div class="container" style="max-width: 1000px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
-            <h2 style="margin:0; text-align: left;"><i class="fas fa-graduation-cap"></i> Studo.ai</h2>
+            <h2 style="margin:0; text-align: left;"><i class="fas fa-graduation-cap"></i> Studo</h2>
             <button onclick="logout()" class="secondary-btn" style="width: auto; margin:0; padding: 10px 20px;">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
@@ -26,21 +26,43 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            
             <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='quiz.html'">
                 <i class="fas fa-gamepad fa-3x" style="color: #6366f1; margin-bottom: 15px;"></i>
                 <h3>Practice Quiz</h3>
                 <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Unlimited AI quizzes.</p>
             </div>
+            
+            <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='notes.html'">
+                <i class="fas fa-file-pdf fa-3x" style="color: #f43f5e; margin-bottom: 15px;"></i>
+                <h3>Handwritten Notes</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">PDF Downloads.</p>
+            </div>
+
+            <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='calculator.html'">
+                <i class="fas fa-calculator fa-3x" style="color: #06b6d4; margin-bottom: 15px;"></i>
+                <h3>Calculator</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Quick math tool.</p>
+            </div>
+
+            <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='notepad.html'">
+                <i class="fas fa-sticky-note fa-3x" style="color: #f97316; margin-bottom: 15px;"></i>
+                <h3>My Notepad</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Save personal ideas.</p>
+            </div>
+
             <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='mistakes.html'">
                 <i class="fas fa-eraser fa-3x" style="color: #ef4444; margin-bottom: 15px;"></i>
                 <h3>Mistake Notebook</h3>
-                <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Review your errors.</p>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Review errors.</p>
             </div>
+            
             <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='progress.html'">
                 <i class="fas fa-trophy fa-3x" style="color: #eab308; margin-bottom: 15px;"></i>
                 <h3>My Progress</h3>
                 <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Stats & Analysis.</p>
             </div>
+            
             <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='study.html'">
                 <i class="fas fa-magic fa-3x" style="color: #ec4899; margin-bottom: 15px;"></i>
                 <h3>AI Study Guide</h3>
