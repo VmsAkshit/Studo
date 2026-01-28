@@ -2,58 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Student Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQuiz - Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="dashboard-body">
-
-    <nav class="nav-bar">
-        <h2>Welcome, <span id="user-name">Student</span></h2>
-        <div>
-            <span style="margin-right: 15px; font-weight:bold; color:var(--primary);">
-                <i class="fas fa-fire"></i> 0 Streak
-            </span>
-            <button onclick="logout()" style="width: auto; padding: 8px 20px; background: var(--danger);">Logout</button>
-        </div>
-    </nav>
-
-    <h3 style="margin-bottom: 20px;">Your Learning Hub</h3>
-
-    <div class="grid-container">
-    <div class="feature-card" onclick="window.location.href='quiz.html'">
-        <i class="fas fa-robot fa-3x" style="color: #8b5cf6; margin-bottom:15px;"></i>
-        <h3>Generate AI Quiz</h3>
-        <p>Practice specific topics</p>
-    </div>
-
-    <div class="feature-card" onclick="window.location.href='mistakes.html'">
-        <i class="fas fa-book-open fa-3x" style="color: #10b981; margin-bottom:15px;"></i>
-        <h3>Mistake Notebook</h3>
-        <p>Revise your weak points</p>
-    </div>
-
-        <div class="feature-card" onclick="window.location.href='progress.html'">
-        <i class="fas fa-chart-line fa-3x" style="color: #ef4444; margin-bottom:15px;"></i>
-        <h3>My Progress</h3>
-        <p>View score history</p>
-        </div>
-
-        <div class="feature-card" onclick="window.location.href='study-guide.html'">
-        <i class="fas fa-lightbulb fa-3x" style="color: #f59e0b; margin-bottom:15px;"></i>
-        <h3>AI Study Guide</h3>
-        <p>Personalized roadmap</p>
-        </div>
-    </div>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
     <script src="config.js"></script>
-    <script src="auth.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
+            <h2 style="margin:0; text-align: left;"><i class="fas fa-chart-line"></i> Dashboard</h2>
+            <button onclick="auth.signOut().then(()=>window.location.href='index.html')" class="secondary-btn" style="width: auto; margin:0; padding: 10px 20px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); padding: 20px; border-radius: 16px; margin-bottom: 30px;">
+            <h3 style="color: white; margin-bottom: 5px;">Welcome Back!</h3>
+            <p id="user-email" style="color: #94a3b8;">Loading profile...</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='quiz.html'">
+                <i class="fas fa-gamepad fa-3x" style="color: #6366f1; margin-bottom: 15px;"></i>
+                <h3>Practice Quiz</h3>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 10px;">Generate unlimited AI questions on any topic.</p>
+                <button class="primary-btn" style="margin-top: 15px;">Start Now</button>
+            </div>
+
+            <div class="question-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='study.html'">
+                <i class="fas fa-book-reader fa-3x" style="color: #ec4899; margin-bottom: 15px;"></i>
+                <h3>AI Study Guide</h3>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 10px;">Get a personalized study plan based on your mistakes.</p>
+                <button class="primary-btn" style="margin-top: 15px; background: linear-gradient(135deg, #ec4899, #a855f7);">Create Plan</button>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px; color: white;">Recent Activity</h3>
+        <div id="history-list">
+            <p style="text-align: center; color: #94a3b8; padding: 20px;">Loading history...</p>
+        </div>
+    </div>
+
     <script>
-        checkAuth(); // Verify user is logged in
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('user-email').innerText = user.email;
+                loadHistory(user.uid);
+            } else { window.location.href = "index.html"; }
+        });
+
+        async function loadHistory(uid) {
+            const list = document.getElementById('history-list');
+            const snapshot = await db.collection('students').doc(uid).collection('history').orderBy('timestamp', 'desc').limit(5).get();
+            if (snapshot.empty) { list.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">No quizzes taken yet.</p>'; return; }
+            
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const scoreColor = (data.score / data.total) > 0.7 ? '#10b981' : '#ef4444';
+                html += `<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div><strong style="display: block; color: white;">${data.topic}</strong><small style="color: #94a3b8;">${data.date}</small></div>
+                    <div style="font-weight: bold; color: ${scoreColor}; font-size: 1.2rem;">${data.score}/${data.total}</div></div>`;
+            });
+            list.innerHTML = html;
+        }
     </script>
 </body>
 </html>
