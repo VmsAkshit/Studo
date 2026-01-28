@@ -2,136 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Progress</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studo - Progress</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="dashboard-body">
-
-    <nav class="nav-bar">
-        <h2><i class="fas fa-chart-line"></i> Learning Analytics</h2>
-        <button onclick="window.location.href='dashboard.html'" style="width: auto;">Back to Home</button>
-    </nav>
-
-    <div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 30px;">
-        <div class="feature-card" style="cursor: default; padding: 20px;">
-            <h3 style="color: var(--text-muted); font-size: 1rem;">Total Quizzes</h3>
-            <h1 id="total-quizzes" style="font-size: 3rem; color: var(--primary); margin: 10px 0;">0</h1>
-        </div>
-        <div class="feature-card" style="cursor: default; padding: 20px;">
-            <h3 style="color: var(--text-muted); font-size: 1rem;">Average Score</h3>
-            <h1 id="avg-score" style="font-size: 3rem; color: var(--success); margin: 10px 0;">0%</h1>
-        </div>
-        <div class="feature-card" style="cursor: default; padding: 20px;">
-            <h3 style="color: var(--text-muted); font-size: 1rem;">Questions Answered</h3>
-            <h1 id="total-questions" style="font-size: 3rem; color: #f59e0b; margin: 10px 0;">0</h1>
-        </div>
-    </div>
-
-    <div class="feature-card" style="cursor: default; margin-bottom: 30px;">
-        <h3>Performance History</h3>
-        <canvas id="progressChart" style="max-height: 400px;"></canvas>
-    </div>
-
-    <h3 style="color: var(--text-muted); margin-bottom: 15px;">Recent Activity</h3>
-    <div id="history-list"></div>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
     <script src="config.js"></script>
-    <script src="auth.js"></script>
+</head>
+<body>
+    <div class="container" style="max-width: 800px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h2><i class="fas fa-trophy"></i> My Progress</h2>
+            <p style="color: #94a3b8;">Your Studo stats</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; text-align: center;">
+                <h1 id="total-quizzes" style="color: var(--primary); font-size: 3rem;">0</h1>
+                <p>Quizzes Taken</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; text-align: center;">
+                <h1 id="avg-score" style="color: var(--success); font-size: 3rem;">0%</h1>
+                <p>Average Score</p>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px;">Recent History</h3>
+        <div id="full-history">Loading stats...</div>
+
+        <button onclick="window.location.href='dashboard.html'" class="secondary-btn" style="margin-top: 30px;">Back to Dashboard</button>
+    </div>
+
     <script>
-        window.auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                loadProgress(user.uid);
-            } else {
-                window.location.href = "index.html";
-            }
-        });
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        async function loadProgress(uid) {
-            // Fetch History from Firebase (Oldest to Newest for Chart)
-            const snapshot = await window.db.collection('students').doc(uid)
-                                   .collection('history')
-                                   .orderBy('timestamp', 'asc')
-                                   .get();
+        auth.onAuthStateChanged(user => { if (user) loadStats(user.uid); else window.location.href = "index.html"; });
 
-            const history = [];
-            snapshot.forEach(doc => history.push(doc.data()));
+        async function loadStats(uid) {
+            const list = document.getElementById('full-history');
+            const snapshot = await db.collection('students').doc(uid).collection('history').orderBy('timestamp', 'desc').limit(20).get();
+            
+            if (snapshot.empty) { list.innerHTML = "No data yet."; return; }
 
-            // Calc Stats
-            document.getElementById('total-quizzes').innerText = history.length;
-            let totalScorePercent = 0;
-            let totalQuestionsAnswered = 0;
+            let totalQ = 0; let totalScore = 0; let totalMax = 0;
+            let html = '';
 
-            history.forEach(session => {
-                totalQuestionsAnswered += session.total;
-                totalScorePercent += (session.score / session.total) * 100;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                totalQ++;
+                totalScore += data.score;
+                totalMax += data.total;
+                
+                const percent = Math.round((data.score / data.total) * 100);
+                const color = percent >= 70 ? '#10b981' : '#ef4444';
+
+                html += `<div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span>${data.topic} <small style="color: #94a3b8;">(${data.date})</small></span>
+                    <span style="color: ${color}; font-weight: bold;">${percent}%</span>
+                </div>`;
             });
 
-            const avg = history.length ? Math.round(totalScorePercent / history.length) : 0;
-            document.getElementById('avg-score').innerText = avg + "%";
-            document.getElementById('total-questions').innerText = totalQuestionsAnswered;
-
-            // Render List (Reverse for Newest First)
-            const listContainer = document.getElementById('history-list');
-            const recentHistory = [...history].reverse(); 
-
-            if (recentHistory.length === 0) {
-                listContainer.innerHTML = "<p style='text-align:center;'>No quizzes taken yet.</p>";
-            } else {
-                recentHistory.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'feature-card';
-                    itemDiv.style.marginBottom = '15px';
-                    itemDiv.style.display = 'flex';
-                    itemDiv.style.justifyContent = 'space-between';
-                    itemDiv.style.padding = '20px';
-                    
-                    const p = (item.score / item.total) * 100;
-                    let color = p >= 80 ? 'var(--success)' : (p >= 50 ? '#f59e0b' : 'var(--error)');
-
-                    itemDiv.innerHTML = `
-                        <div style="text-align:left;">
-                            <h4 style="margin:0; color:var(--text-main);">${item.topic}</h4>
-                            <small style="color:var(--text-muted);">${item.date}</small>
-                        </div>
-                        <div><span style="font-weight:bold; font-size:1.2rem; color:${color};">${item.score}/${item.total}</span></div>
-                    `;
-                    listContainer.appendChild(itemDiv);
-                });
-            }
-
-            // Render Chart
-            if (history.length > 0) {
-                const ctx = document.getElementById('progressChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: history.map((h, i) => `Quiz ${i+1}`),
-                        datasets: [{
-                            label: 'Score (%)',
-                            data: history.map(h => (h.score / h.total) * 100),
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { labels: { color: '#a0a0a0' } } },
-                        scales: {
-                            y: { beginAtZero: true, max: 100, grid: { color: '#333' }, ticks: { color: '#a0a0a0' } },
-                            x: { display: false }
-                        }
-                    }
-                });
-            }
+            document.getElementById('total-quizzes').innerText = totalQ;
+            document.getElementById('avg-score').innerText = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) + "%" : "0%";
+            list.innerHTML = html;
         }
     </script>
 </body>
