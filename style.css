@@ -29,17 +29,20 @@ body {
         radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
     background-attachment: fixed;
     color: var(--text-main);
+    
+    /* ALIGNMENT FIXES */
     min-height: 100vh;
+    height: auto;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 20px;
+    align-items: flex-start; /* Prevents cutting off top */
+    padding: 40px 20px;
+    overflow-x: hidden;
 }
 
-/* --- THE GLASS CARD --- */
+/* --- GLASS CARD --- */
 .container {
     width: 100%;
-    max-width: 800px;
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -48,9 +51,10 @@ body {
     padding: 40px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.6s ease-out;
+    margin-top: 5vh; /* Slight spacing from top */
 }
 
-/* --- HEADERS --- */
+/* --- TYPOGRAPHY --- */
 h2 {
     font-size: 2rem;
     font-weight: 700;
@@ -59,10 +63,9 @@ h2 {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-align: center;
 }
 
-/* --- FORM ELEMENTS --- */
+/* --- FORMS --- */
 label {
     display: block;
     margin-top: 20px;
@@ -104,10 +107,8 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
-/* Primary Action Button */
 button.primary-btn {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: white;
@@ -119,11 +120,6 @@ button.primary-btn:hover {
     box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
 }
 
-button.primary-btn:active {
-    transform: translateY(0);
-}
-
-/* Secondary Button (Back) */
 button.secondary-btn {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-muted);
@@ -135,7 +131,7 @@ button.secondary-btn:hover {
     color: white;
 }
 
-/* --- QUIZ CARDS --- */
+/* --- CARDS & QUIZ --- */
 .question-card {
     background: rgba(255, 255, 255, 0.03);
     padding: 25px;
@@ -144,88 +140,37 @@ button.secondary-btn:hover {
     border: 1px solid var(--glass-border);
 }
 
-.question-card h3 {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    line-height: 1.6;
-}
-
 .option-btn {
-    display: block;
-    width: 100%;
     text-align: left;
     background: rgba(255, 255, 255, 0.05);
     margin-top: 10px;
     padding: 15px 20px;
     border-radius: 10px;
     color: var(--text-muted);
-    border: 1px solid transparent;
-    text-transform: none; /* Keep options readable */
+    text-transform: none;
 }
 
-.option-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-}
+.option-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(5px); }
+.option-btn.selected { background: rgba(99, 102, 241, 0.2); border-color: var(--primary); color: white; border: 1px solid var(--primary); }
+.option-btn.correct { background: rgba(16, 185, 129, 0.2) !important; border-color: var(--success) !important; color: var(--success) !important; }
+.option-btn.wrong { background: rgba(239, 68, 68, 0.2) !important; border-color: var(--error) !important; color: var(--error) !important; }
 
-.option-btn.selected {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: var(--primary);
-    color: white;
-}
-
-.option-btn.correct {
-    background: rgba(16, 185, 129, 0.2) !important;
-    border-color: var(--success) !important;
-    color: var(--success) !important;
-}
-
-.option-btn.wrong {
-    background: rgba(239, 68, 68, 0.2) !important;
-    border-color: var(--error) !important;
-    color: var(--error) !important;
-}
-
-/* --- EXPLANATION BOX --- */
 .explanation {
     margin-top: 15px;
     padding: 15px;
     background: rgba(255, 255, 255, 0.05);
     border-left: 4px solid var(--secondary);
     border-radius: 8px;
-    font-size: 0.9rem;
     color: #e2e8f0;
-    display: none; /* Hidden by default */
+    display: none;
     animation: slideDown 0.3s ease-out;
 }
 
-/* --- ANIMATIONS --- */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+/* --- ANIMATIONS & UTILS --- */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- UTILITIES --- */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-bottom: 20px;
-}
+.status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .status-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 .status-error { background: rgba(239, 68, 68, 0.15); color: #f87171; }
 .status-loading { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-
-#loading-spinner i {
-    color: var(--accent);
-    margin-bottom: 20px;
-}
