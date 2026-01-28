@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Study Guide</title>
+    <title>Studo - Study Guide</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -25,7 +25,7 @@
         </div>
 
         <div id="content-area" style="display:none;">
-            <div id="guide-output" style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; line-height: 1.8; color: #e2e8f0;"></div>
+            <div id="guide-output" style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; line-height: 1.8; color: #e2e8f0; text-align: left;"></div>
         </div>
 
         <div id="start-screen" style="text-align: center; padding: 40px;">
@@ -44,35 +44,84 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // Use a stable model for long text generation
+        const STUDY_MODEL = "gemini-3-flash-preview"; 
+
         async function generateGuide() {
             const user = auth.currentUser;
             if(!user) return alert("Please login first");
 
+            // UI Updates
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
 
-            const mistakesSnap = await db.collection('students').doc(user.uid).collection('mistakes').orderBy('timestamp', 'desc').limit(10).get();
-            let mistakesText = "";
-            mistakesSnap.forEach(doc => { const data = doc.data(); mistakesText += `- Topic: ${data.topic}, Question: ${data.question}, Correct: ${data.answer}\n`; });
-
-            if (!mistakesText) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content-area').style.display = 'block';
-                document.getElementById('guide-output').innerHTML = "<h3>Great job!</h3><p>You haven't made any mistakes yet. Take some quizzes first!</p>";
-                return;
-            }
-
-            const prompt = `Act as a tutor. Here are a student's recent mistakes:\n${mistakesText}\n\nCreate a short, bulleted study plan to fix these specific weak areas. Use formatting.`;
-
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-preview-02-05:generateContent?key=${aiConfig.apiKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                // 1. Fetch Mistakes (Last 15)
+                const mistakesSnap = await db.collection('students').doc(user.uid).collection('mistakes')
+                    .orderBy('timestamp', 'desc').limit(15).get();
+
+                let mistakesText = "";
+                mistakesSnap.forEach(doc => { 
+                    const data = doc.data(); 
+                    mistakesText += `- Topic: ${data.topic} | Question: "${data.question}" | Correct Answer: "${data.answer}"\n`; 
                 });
+
+                // Handle Empty State
+                if (!mistakesText) {
+                    showOutput(`
+                        <h3>Great job! 🎉</h3>
+                        <p>You haven't made any mistakes yet, so I can't build a recovery plan.</p>
+                        <p>Go take some <strong>Hard</strong> quizzes to challenge yourself!</p>
+                    `);
+                    return;
+                }
+
+                // 2. Call AI
+                const prompt = `
+                    Act as an expert tutor. Here are a student's recent mistakes:
+                    ${mistakesText}
+                    
+                    TASK:
+                    Create a personalized study plan.
+                    1. Identify the 3 weakest topics.
+                    2. Explain the core concept they are missing for each.
+                    3. Give a 1-sentence tip to remember it.
+                    
+                    Format nicely with Markdown (Bold, Lists). Keep it encouraging.
+                `;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${STUDY_MODEL}:generateContent?key=${aiConfig.apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
                 const data = await response.json();
+
+                // --- CRITICAL ERROR FIX ---
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("AI couldn't generate a plan (Safety block or Busy). Try again.");
+                }
+                // --------------------------
+
+                const aiText = data.candidates[0].content.parts[0].text;
+                showOutput(marked.parse(aiText));
+
+            } catch(e) {
+                console.error(e);
+                alert("Studo AI Error: " + e.message);
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('content-area').style.display = 'block';
-                document.getElementById('guide-output').innerHTML = marked.parse(data.candidates[0].content.parts[0].text);
-            } catch(e) { alert("AI Error: " + e.message); location.reload(); }
+                document.getElementById('start-screen').style.display = 'block';
+            }
+        }
+
+        function showOutput(htmlContent) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content-area').style.display = 'block';
+            document.getElementById('guide-output').innerHTML = htmlContent;
         }
     </script>
 </body>
