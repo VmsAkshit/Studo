@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studo - Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Specific Styles for Calculator Buttons */
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .calc-btn {
+            padding: 20px;
+            font-size: 1.2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .calc-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .calc-btn.operator { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .calc-btn.equal { background: linear-gradient(135deg, #10b981, #059669); grid-column: span 2; }
+        .calc-btn.clear { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        #display {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            text-align: right;
+            font-size: 2rem;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" style="max-width: 450px;">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2><i class="fas fa-calculator"></i> Calculator</h2>
+            <p style="color: #94a3b8;">Quick math helper</p>
+        </div>
+
+        <input type="text" id="display" readonly value="">
+
+        <div class="calc-grid">
+            <button class="calc-btn clear" onclick="clearDisplay()">C</button>
+            <button class="calc-btn operator" onclick="appendOperator('/')">÷</button>
+            <button class="calc-btn operator" onclick="appendOperator('*')">×</button>
+            <button class="calc-btn operator" onclick="deleteLast()"><i class="fas fa-backspace"></i></button>
+
+            <button class="calc-btn" onclick="appendNumber('7')">7</button>
+            <button class="calc-btn" onclick="appendNumber('8')">8</button>
+            <button class="calc-btn" onclick="appendNumber('9')">9</button>
+            <button class="calc-btn operator" onclick="appendOperator('-')">-</button>
+
+            <button class="calc-btn" onclick="appendNumber('4')">4</button>
+            <button class="calc-btn" onclick="appendNumber('5')">5</button>
+            <button class="calc-btn" onclick="appendNumber('6')">6</button>
+            <button class="calc-btn operator" onclick="appendOperator('+')">+</button>
+
+            <button class="calc-btn" onclick="appendNumber('1')">1</button>
+            <button class="calc-btn" onclick="appendNumber('2')">2</button>
+            <button class="calc-btn" onclick="appendNumber('3')">3</button>
+            <button class="calc-btn equal" onclick="calculate()">=</button>
+            
+            <button class="calc-btn" onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+            <button class="calc-btn" onclick="appendNumber('.')">.</button>
+        </div>
+
+        <button onclick="window.location.href='dashboard.html'" class="secondary-btn" style="margin-top: 30px;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+
+        function appendNumber(num) {
+            display.value += num;
+        }
+
+        function appendOperator(op) {
+            const lastChar = display.value.slice(-1);
+            if (['+','-','*','/'].includes(lastChar)) {
+                display.value = display.value.slice(0, -1); // Replace operator if clicked twice
+            }
+            display.value += op;
+        }
+
+        function clearDisplay() {
+            display.value = '';
+        }
+
+        function deleteLast() {
+            display.value = display.value.toString().slice(0, -1);
+        }
+
+        function calculate() {
+            try {
+                // Safety check: only allow math characters
+                if(/[^0-9+\-*/.]/.test(display.value)) {
+                    throw new Error("Invalid");
+                }
+                display.value = eval(display.value);
+            } catch (e) {
+                display.value = 'Error';
+                setTimeout(() => clearDisplay(), 1000);
+            }
+        }
+    </script>
+</body>
+</html>
