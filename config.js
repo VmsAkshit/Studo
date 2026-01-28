@@ -10,11 +10,13 @@ const firebaseConfig = {
     appId: "1:657819908694:web:ca5bc42a9cf7b142e499f7"
 };
 
-// BACKUP OPTION: Use the specific version number
+const geminiKeyPart1 = "AIzaSyCJ2r-OcNecYSwFUi"; 
+
+// 4. Paste the SECOND half below:
+const geminiKeyPart2 = "kS4Il5SZKvMWJYOaM"; 
+
 const aiConfig = {
-    /
-    const keyPart1 = "AIzaSyCJ2r-OcNecYSwFUi"; 
-    const keyPart2 = "kS4Il5SZKvMWJYOaM"; 
-    const API_KEY = keyPart1 + keyPart2; 
+    // This joins the key back together automatically:
+    apiKey: geminiKeyPart1 + geminiKeyPart2,
     model: "gemini-3-flash-preview" 
 };
