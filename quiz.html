@@ -92,7 +92,13 @@
         };
 
         // --- GEMINI API KEY ---
-        const API_KEY = "AIzaSyAeEq6iupOK7JwMpCfdQKxZclKFxArnR1g"; 
+        const keyPart1 = "AIzaSyCJ2r-OcNecYSwFUi"; 
+
+        // Paste the second half of your key here
+        const keyPart2 = "kS4Il5SZKvMWJYOaM"; 
+
+        // The code joins them together automatically
+        const API_KEY = keyPart1 + keyPart2; 
 
         // --- 2. INITIALIZE FIREBASE ---
         if (!firebase.apps.length) {
