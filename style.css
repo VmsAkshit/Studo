@@ -1,4 +1,4 @@
-/* style.css - Modern Glassmorphism Design (Fixed Background) */
+/* style.css - Fixed Background Version */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
 :root {
@@ -21,36 +21,30 @@
     font-family: 'Poppins', sans-serif;
 }
 
-/* --- BACKGROUND FIX --- */
-/* This creates a fixed background layer that never moves or cuts off */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
+html {
+    height: 100%; /* Ensures the page is always at least full height */
+}
+
+body {
     background-color: var(--background);
+    /* The magic combo for full-screen fixed background */
     background-image: 
         radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
-    background-attachment: fixed;
-}
-
-body {
+    background-attachment: fixed; /* Locks background in place */
+    background-size: cover;
+    background-repeat: no-repeat;
+    
     color: var(--text-main);
     min-height: 100vh;
-    height: auto;
     display: flex;
     justify-content: center;
-    align-items: flex-start; 
+    align-items: flex-start;
     padding: 40px 20px;
-    overflow-x: hidden;
 }
 
-/* --- GLASS CARD --- */
+/* --- GLASS CONTAINER --- */
 .container {
     width: 100%;
     background: var(--glass-bg);
@@ -61,7 +55,7 @@ body {
     padding: 40px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.6s ease-out;
-    margin-top: 2vh; 
+    margin-top: 2vh;
 }
 
 /* --- TYPOGRAPHY --- */
@@ -141,15 +135,14 @@ button.secondary-btn:hover {
     color: white;
 }
 
-/* --- CARDS & QUIZ --- */
+/* --- CARDS --- */
 .question-card {
     background: rgba(255, 255, 255, 0.03);
     padding: 25px;
     border-radius: 16px;
-    margin-bottom: 0; /* Adjusted for grid spacing */
     border: 1px solid var(--glass-border);
     transition: transform 0.3s ease, border-color 0.3s ease;
-    height: 100%; /* Makes cards equal height */
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -163,6 +156,8 @@ button.secondary-btn:hover {
 }
 
 .option-btn {
+    display: block;
+    width: 100%;
     text-align: left;
     background: rgba(255, 255, 255, 0.05);
     margin-top: 10px;
@@ -170,6 +165,7 @@ button.secondary-btn:hover {
     border-radius: 10px;
     color: var(--text-muted);
     text-transform: none;
+    border: 1px solid transparent;
 }
 
 .option-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(5px); }
